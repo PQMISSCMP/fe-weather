@@ -1,16 +1,9 @@
 import React, { Component } from 'react';
 import './App.css';
 import { render } from '@testing-library/react';
-import Map from "./mapa";
-// import { useState } from 'react';
-
-
-// const [show, setShow] = useState(false);
-// const handleClose = () => setShow(false);
-// const handleShow = () => setShow(true);
+import Map from "./map";
 
 class App extends Component {
-
   render() {
     return (
       <div>
@@ -25,7 +18,6 @@ class App extends Component {
     );
 
 
-    
   }
 
 
