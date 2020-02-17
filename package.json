@@ -14,7 +14,7 @@
     "react-dom": "^16.12.0",
     "react-google-maps": "^9.4.5",
     "react-modal": "^3.11.1",
-    "react-scripts": "3.3.1",
+    "react-scripts": "^3.4.0",
     "reactstrap": "^8.4.1",
     "request": "^2.88.2",
     "request-promise-native": "^1.0.8"

@@ -9,14 +9,13 @@ export const showWeather = async(event) => {
         
         const resultReverseGeoCode = await getReverseGeocode(lat, lng);        
         const shortNameCountry = getShortNameCountry(resultReverseGeoCode);
-        const { pais, capital, latitud, longitud} = await getInfoCountry(shortNameCountry);
 
-        const { temperature, time } = await getWeatherApi(latitud, longitud);
-        const date = new Date(time * 1000);
-        const season = getSeason(date);
+        const { country, capital, time, temperature, cache } = await getWeatherApi(shortNameCountry);
+        const season = getSeason(time);
         const celcius = convertFahrenheitToCelsius(temperature);
-        
-        alert(`La capital de '${pais}' es '${capital}'.\nSu estación es '${season}', \ny su temperatura es de '${celcius}' ºC`)
+
+        console.log("cache: ", cache);
+        alert(`La capital de '${country}' es '${capital}'.\nSu estación es '${season}', \ny su temperatura es de '${celcius}' ºC`)
 
     } catch (error) {
         console.log(error);
@@ -29,7 +28,8 @@ export const showWeather = async(event) => {
  * @param {*} date 
  * Obtiene la estación del año a nivel mundial  
  */
-const getSeason = (date) => {   
+const getSeason = (time) => {
+    const date = new Date(time * 1000);
     const indexSeason =  Math.floor((date.getMonth() / 12 * 4)) % 4;
     return ['Verano', 'Otoño', 'Invierno', 'Primavera'][indexSeason]
 }
@@ -52,15 +52,15 @@ const convertFahrenheitToCelsius = (fahrenheit) => {
  * @param {*} lng 
  * Consulta a la API weather para obtener información alusiva al tiempo. Data cacheada.
  */
-const getWeatherApi = async (lat, lng) => {
+const getWeatherApi = async (shortNameCountry) => {
 
-    const queryApi = `${process.env.REACT_APP_BACKEND}/clima/${lat}/${lng}`;
+    const queryApi = `${process.env.REACT_APP_BACKEND}/clima/${shortNameCountry}`;
     let jsonWeather;
     try {
         const response = await request.get( queryApi);
         if (typeof response === "undefined"){ throw new Error('Error al obtener data del tiempo.') }
         jsonWeather = JSON.parse(response);
-        return { temperature: jsonWeather.currently.temperature, time: jsonWeather.currently.time };
+        return { temperature: jsonWeather.apiWeather.temperatura, time: jsonWeather.apiWeather.fechahora, country: jsonWeather.infoCountry.pais, capital: jsonWeather.infoCountry.capital, cache: jsonWeather.cache  };
     } catch (error) {
         throw error;
     }
@@ -72,7 +72,7 @@ const getWeatherApi = async (lat, lng) => {
  * 
  * @param {*} lat 
  * @param {*} lng 
- * Obtiene información entendible por humanos a partir de coordenadas
+ * Obtiene información entendible por humanos a partir de coordenadas selecionadas en mapa
  */
 const getReverseGeocode = async(lat, lng) => {
 
@@ -97,8 +97,9 @@ const getShortNameCountry = (resultReverseGeoCode) => {
     try {
         const resultados = resultReverseGeoCode.data.results;
         let short_name;
-        resultados.filter(result => result.types.indexOf('country') !== -1 ).map(element => {
-            element.address_components.filter(address => address.types.indexOf('country') !== -1).map (add =>{            
+        
+        resultados.filter(result => result.types.indexOf('country') !== -1 ).forEach(element => {
+            element.address_components.filter(address => address.types.indexOf('country') !== -1).forEach(add => {            
                 short_name = add.short_name;
             });
         });
@@ -107,24 +108,4 @@ const getShortNameCountry = (resultReverseGeoCode) => {
     } catch (error) {
         throw error;
     }
-}
-
-
-/**
- * 
- * @param {*} shortNameCountry 
- * Obtiene toda la información relativa a un determinado pais, incluido nombre del país y su capital
- */
-const getInfoCountry = async(shortNameCountry) =>{
-
-    const queryApi = `${process.env.REACT_APP_URL_API_COUNTRIES}/${shortNameCountry}`;
-    let jsonCountry;
-    try {
-        const response = await request.get( queryApi);
-        if (typeof response === "undefined"){ throw new Error('Error al obtener data del país.') }
-        jsonCountry = JSON.parse(response);
-        return {pais: jsonCountry.name, capital: jsonCountry.capital, latitud: jsonCountry.latlng[0], longitud: jsonCountry.latlng[1]};
-    } catch (error) {
-        throw error;
-    }    
 }
