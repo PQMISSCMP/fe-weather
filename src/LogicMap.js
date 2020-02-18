@@ -1,3 +1,4 @@
+/* eslint-disable no-fallthrough */
 import request from "request-promise-native";
 import { Client } from "@googlemaps/google-maps-services-js";
 
@@ -11,7 +12,7 @@ export const showWeather = async(event) => {
         const shortNameCountry = getShortNameCountry(resultReverseGeoCode);
 
         const { country, capital, time, temperature, cache } = await getWeatherApi(shortNameCountry);
-        const season = getSeason(time);
+        const season = getSeason(time, lat);
         const celcius = convertFahrenheitToCelsius(temperature);
 
         console.log("cache: ", cache);
@@ -26,12 +27,26 @@ export const showWeather = async(event) => {
 /**
  * 
  * @param {*} date 
+ * @param {*} latitud
  * Obtiene la estación del año a nivel mundial  
  */
-const getSeason = (time) => {
+const getSeason = (time, latitud) => {
+
+    const hemisferio = latitud > 0 ? 'NORTE': 'SUR';
     const date = new Date(time * 1000);
-    const indexSeason =  Math.floor((date.getMonth() / 12 * 4)) % 4;
-    return ['Verano', 'Otoño', 'Invierno', 'Primavera'][indexSeason]
+    const indexSeason =  Math.floor((date.getMonth() / 12 * 4)) % 4 ;
+
+    // SUR     verano      otoño       invierno    primavera
+    // NORTE:  invierno    primavera   verano      otoño
+
+    let season;
+    if ( hemisferio === 'SUR' ){
+        season = ['Verano', 'Otoño', 'Invierno', 'Primavera'][indexSeason]
+    } else if ( hemisferio === 'NORTE' ){
+        season = ['Invierno', 'Primavera', 'Verano', 'Otoño'][indexSeason]
+    }
+
+    return season;
 }
 
 
@@ -78,7 +93,7 @@ const getReverseGeocode = async(lat, lng) => {
 
     const cliente = new Client({});
     try {
-        const resultReverseGeoCode = await cliente.reverseGeocode({params: {latlng: [lat, lng], key: process.env.REACT_APP_API_KEY }});
+        const resultReverseGeoCode = await cliente.reverseGeocode({params: {latlng: [lat, lng], key: process.env.REACT_APP_API_KEY }});        
         if (typeof resultReverseGeoCode === "undefined") { throw new Error('Error al obtener datos de Google Maps.') }
         return resultReverseGeoCode;
     } catch (error) {
